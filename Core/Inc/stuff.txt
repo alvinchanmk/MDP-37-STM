@@ -1,0 +1,219 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+typedef struct{
+	   char  dir;
+	   int   steps;
+}move_order;
+
+int front = -1, rear = -1;
+move_order items[SIZE];
+
+
+void enQueue(move_order the_move_order) {
+  if (rear == SIZE - 1)
+    printf("\nQueue is Full!!");
+  else {
+    if (front == -1)
+      front = 0;
+    rear++;
+    items[rear] = the_move_order;
+    printf("\nInserted -> [%c, %d]", the_move_order.dir,the_move_order.steps);
+  }
+}
+
+move_order deQueue(void) {
+  int old_front;
+  if (front == -1){
+
+    printf("\nQueue is Empty!!");
+    move_order empty_move_order;
+    empty_move_order.dir = 'S';
+    empty_move_order.steps = '0';
+
+    return empty_move_order;
+  }
+  else {
+    printf("\nDeleted : [%c, %d]", items[front].dir,items[front].steps);
+    old_front = front;
+
+    front++;
+    if (front > rear){
+      front = rear = -1;
+    }
+
+    return(items[old_front]);
+  }
+}
+
+// Function to print the queue
+void display() {
+  if (rear == -1)
+    printf("\nQueue is Empty!!!");
+  else {
+    int i;
+    printf("\nQueue elements are:\n");
+    for (i = front; i <= rear; i++){
+
+        printf("item %d : -> [%c, %d]",i, items[i].dir,items[i].steps);
+    }
+  }
+  printf("\n");
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void motor_A_init(void){
+	HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_1);
+}
+
+void motor_C_init(void){
+	HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_3);
+}
+
+void steering_init(void){
+	HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_4);
+}
+
+
+void init_motors(void){
+	motor_A_init();
+	motor_C_init();
+	steering_init();
+}
+
+void set_A_clockwise(void){
+	HAL_GPIO_WritePin(GPIOA,AIN2_Pin,GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOA,AIN1_Pin,GPIO_PIN_RESET);
+}
+
+void set_A_anticlockwise(void){
+	HAL_GPIO_WritePin(GPIOA,AIN1_Pin,GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOA,AIN2_Pin,GPIO_PIN_RESET);
+}
+
+void set_C_anticlockwise(void){
+	HAL_GPIO_WritePin(GPIOC,CIN2_Pin,GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOE,CIN1_Pin,GPIO_PIN_RESET);
+}
+
+void set_C_clockwise(void){
+	HAL_GPIO_WritePin(GPIOE,CIN1_Pin,GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOC,CIN2_Pin,GPIO_PIN_RESET);
+}
+
+void set_A_pwm(int16_t speed){
+	__HAL_TIM_SetCompare(&htim8,TIM_CHANNEL_1,speed);
+}
+
+void set_C_pwm(int16_t speed){
+	__HAL_TIM_SetCompare(&htim8,TIM_CHANNEL_3,speed);
+}
+
+void move_forward(int16_t speed){
+	set_A_clockwise();
+	set_C_anticlockwise();
+
+	set_A_pwm(speed);
+	set_C_pwm(speed);
+}
+
+void move_backward(int16_t speed){
+	set_C_clockwise();
+	set_A_anticlockwise();
+
+	set_A_pwm(speed);
+	set_C_pwm(speed);
+}
+
+void stop_motor(void){
+
+	set_A_pwm(0);
+	set_C_pwm(0);
+}
+
+
+void steer_left(void){
+	htim1.Instance->CCR4 = 100 ; //Extreme right 176
+	osDelay(100);
+}
+
+void steer_right(void){
+	htim1.Instance->CCR4 = 200 ; //Extreme right 176
+	osDelay(100);
+
+}
+
+void steer_center(void){
+	htim1.Instance->CCR4 = 148 ; //Extreme right 176
+	osDelay(100);
+
+}
+
+
+void unit_forward(void){
+	steer_center();
+	move_forward(7199);
+	osDelay(210); // 111 with 1 delay on steering
+	stop_motor();
+}
+
+void unit_left(void){
+	steer_left();
+	move_forward(7199);
+	osDelay(210);
+	stop_motor();
+}
+
+void unit_reverse_left(void){
+	steer_left();
+	move_backward(7199);
+	osDelay(210);
+	stop_motor();
+}
+
+void unit_right(void){
+	steer_right();
+	move_forward(7199);
+	osDelay(210);
+	stop_motor();
+}
+
+void unit_reverse_right(void){
+	steer_right();
+	move_backward(7199);
+	osDelay(210);
+	stop_motor();
+}
+
+
+void unit_reverse(void){
+	steer_center();
+	move_backward(7199);
+	osDelay(210);
+	stop_motor();
+}
+
+void spot_turn_right(void){
+	int i;
+	for(i=0;i<3;i++){
+		unit_right();
+		osDelay(500);
+		unit_reverse_left();
+		osDelay(500);
+	}
+	steer_center();
+}
+
+void spot_turn_left(void){
+	int i;
+	for(i=0;i<3;i++){
+		unit_left();
+		osDelay(500);
+		unit_reverse_right();
+		osDelay(500);
+	}
+	steer_center();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
