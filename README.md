@@ -1,4 +1,4 @@
-# CE4171: Multidisciplinary Project
+# CE3004: Multidisciplinary Project
 
 ## MDP STM SOURCE CODE
 
